@@ -1,0 +1,9 @@
+.container {
+  display: flex;
+}
+
+.content {
+  margin-left: 250px; // Deve ser igual à largura da sidebar
+  padding: 2rem;
+  width: 100%;
+}

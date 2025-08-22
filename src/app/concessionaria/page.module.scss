@@ -1,0 +1,306 @@
+@use '../styles/color.scss' as color;
+
+/* Layout principal */
+.concessionariaContainer {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-x: auto;
+  min-height: 80vh;
+  position: relative;
+}
+
+.header {
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin: 0 0 0.5rem;
+  }
+  
+  .subtitle {
+    color: #666;
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+/* Estados de carregamento e erro */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  font-size: 1.2rem;
+  
+  p {
+    margin-left: 1rem;
+  }
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+}
+
+.errorText {
+  color: color.$danger-color;
+  background-color: lighten(color.$danger-color, 40%);
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 4px solid color.$danger-color;
+  margin: 0 0 1rem;
+}
+
+.retryButton {
+  background-color: color.$primary-color;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: darken(color.$primary-color, 10%);
+  }
+}
+
+/* Estilos da tabela */
+.tableWrapper {
+  position: relative;
+  width: 100%;
+  margin-top: 1.5rem;
+  min-height: 200px; /* Garante espaço para o loading */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableContainer {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid color.$extra-light-gray;
+  position: relative;
+  background: color.$white;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: color.$dark-gray;
+  background: color.$white;
+  margin: 0;
+  padding: 0;
+}
+
+/* Cabeçalho da tabela */
+.th {
+  background-color: color.$light-gray;
+  color: color.$dark-gray;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid color.$extra-light-gray;
+  position: relative;
+  white-space: nowrap;
+  
+  &:first-child {
+    border-top-left-radius: 8px;
+  }
+  
+  &:last-child {
+    border-top-right-radius: 8px;
+  }
+}
+
+/* Células da tabela */
+.td {
+  padding: 1rem;
+  border-bottom: 1px solid color.$extra-light-gray;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+/* Linhas da tabela */
+.tr {
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(color.$primary-color, 0.03);
+  }
+  
+  &:last-child {
+    .td {
+      border-bottom: none;
+    }
+  }
+}
+
+/* Cabeçalhos ordenáveis */
+.sortableHeader {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: darken(color.$light-gray, 2%);
+  }
+}
+
+.sortButton {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.5rem;
+  margin: -0.5rem;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: color.$primary-color;
+  }
+  
+  &:focus {
+    outline: 2px solid color.$primary-color;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+.sortIcon {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  
+  .sortButton:hover & {
+    opacity: 1;
+  }
+}
+
+.headerContent {
+  padding: 0.5rem;
+}
+
+/* Estado vazio */
+.emptyState {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: color.$medium-gray;
+  background: color.$white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .concessionariaContainer {
+    padding: 1rem;
+  }
+  
+  .table {
+    font-size: 0.875rem;
+  }
+  
+  .th,
+  .td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  /* Tabela responsiva */
+  .tableWrapper {
+    margin: 1rem -1rem;
+    width: calc(100% + 2rem);
+  }
+  
+  .table {
+    min-width: 600px;
+  }
+}
+
+/* Ações */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.actionButton {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: color.$primary-color;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+
+  &:hover {
+    background-color: rgba(color.$primary-color, 0.1);
+  }
+
+  &:focus {
+    outline: 2px solid color.$primary-color;
+    outline-offset: 2px;
+  }
+
+  &.deleteButton {
+    color: color.$danger-color;
+
+    &:hover {
+      background-color: rgba(color.$danger-color, 0.1);
+    }
+
+    &:focus {
+      outline-color: color.$danger-color;
+    }
+  }
+}
+
+/* Acessibilidade */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

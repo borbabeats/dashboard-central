@@ -1,0 +1,21 @@
+// Paleta de Cores para o Dashboard CMS
+
+// Cores Primárias (Azuis)
+$primary-color: #007bff;       // Azul primário para botões, links e elementos ativos.
+$primary-color-dark: #0056b3;    // Tom mais escuro para estados como hover e focus.
+$primary-color-light: #cce5ff;   // Tom claro para fundos de alertas ou destaques sutis.
+
+// Cores Secundárias (Cinzas)
+$dark-gray: #343a40;          // Cinza escuro para texto principal, garantindo boa legibilidade.
+$medium-gray: #6c757d;        // Cinza médio para texto secundário, ícones e bordas.
+$light-gray: #f8f9fa;         // Cinza claro para fundos de seções e painéis.
+$extra-light-gray: #e9ecef;   // Cinza muito claro para bordas e divisórias sutis.
+
+// Cores Neutras
+$white: #ffffff;               // Branco para o fundo principal e texto em fundos escuros.
+$black: #000000;               // Preto para texto, usar com moderação para não sobrecarregar.
+
+// Cores de Feedback Semântico
+$success-color: #28a745;       // Verde para mensagens de sucesso.
+$warning-color: #ffc107;       // Amarelo para avisos e alertas.
+$danger-color: #dc3545;        // Vermelho para erros e ações destrutivas.
