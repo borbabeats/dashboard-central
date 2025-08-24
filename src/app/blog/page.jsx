@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import Notification from '../components/Notification';
+import api from "../../api/api";
 import { useGetPosts } from "../../store/useGetPosts";
+import ConfirmModal from "../components/ConfirmModal";
 import { BlogTable } from "./BlogTable";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import styles from "./page.module.scss";
@@ -16,6 +19,13 @@ export default function BlogPage() {
     // Estados locais
     const [localError, setLocalError] = useState(null);
     const [sorting, setSorting] = useState({ id: 'published_at', desc: true });
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [notification, setNotification] = useState({
+        show: false,
+        message: '',
+        type: 'success'
+    });
+    const postToDelete = useRef(null);
     
     const { 
         posts, 
@@ -59,12 +69,6 @@ export default function BlogPage() {
                 enableSorting: true,
             },
             {
-                header: 'Resumo',
-                accessorKey: 'excerpt',
-                cell: info => <span className={styles.postExcerpt}>{info.getValue() || 'Sem descrição disponível'}</span>,
-                enableSorting: false,
-            },
-            {
                 header: 'Publicação',
                 accessorKey: 'published_at',
                 cell: info => {
@@ -93,20 +97,53 @@ export default function BlogPage() {
         // Implementar navegação para edição
     };
 
-    const handleDelete = async (postId) => {
-        if (window.confirm('Tem certeza que deseja excluir esta postagem?')) {
-            try {
-                console.log('Excluindo post ID:', postId);
-                // Implementar lógica de exclusão
-                // await deletePost(postId);
-                // Recarregar a lista de posts
-                // await getPosts();
-            } catch (error) {
-                console.error('Erro ao excluir post:', error);
-                setError('Falha ao excluir a postagem. Tente novamente.');
+    const handleDeleteClick = (postId) => {
+        if (!postId || isNaN(parseInt(postId, 10))) {
+            console.error('ID de post inválido');
+            return;
+        }
+        postToDelete.current = postId;
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        try {
+            const response = await api.delete(`/posts/${postToDelete.current}`);
+            
+            if (response.status === 204) {
+                showNotification('Post excluído com sucesso!', 'success');
+                // Recarregar a lista de posts mantendo a paginação atual
+                await loadPosts(meta.current_page, sorting);
+            } else {
+                throw new Error(`Erro inesperado: ${response.status}`);
             }
+        } catch (error) {
+            console.error('Erro ao excluir post:', error);
+            showNotification('Falha ao excluir a postagem. Tente novamente.', 'error');
+        } finally {
+            setShowDeleteConfirm(false);
+            postToDelete.current = null;
         }
     };
+
+    const handleCancelDelete = () => {
+        setShowDeleteConfirm(false);
+        postToDelete.current = null;
+    };
+
+    const showNotification = useCallback((message, type = 'success') => {
+        setNotification({
+            show: true,
+            message,
+            type
+        });
+
+        const timer = setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }));
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     // Estado de erro
     if (error && !isLoading) {
@@ -132,12 +169,20 @@ export default function BlogPage() {
             
             <div className={styles.tableWrapper}>
                 <BlogTable 
-                    data={posts || []} 
-                    columns={columns}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    isLoading={isLoading}
+                    data={posts} 
+                    columns={columns} 
                     onSortChange={handleSortChange}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                    isLoading={isLoading}
+                />
+                <ConfirmModal
+                    isOpen={showDeleteConfirm}
+                    onClose={handleCancelDelete}
+                    onConfirm={handleConfirmDelete}
+                    title="Excluir Postagem"
+                    message="Tem certeza que deseja excluir esta postagem? Esta ação não pode ser desfeita."
+                    confirmText="Excluir"
                 />
                 
                 {/* Paginação pode ser adicionada aqui */}
@@ -147,6 +192,13 @@ export default function BlogPage() {
                     </div>
                 )}
             </div>
+            {notification.show && (
+                <Notification
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(prev => ({ ...prev, show: false }))}
+                />
+            )}
         </div>
     );
 }

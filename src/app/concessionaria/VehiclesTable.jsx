@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,6 +11,9 @@ import {
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import styles from './page.module.scss';
+import ConfirmModal from '../components/ConfirmModal';
+import Notification from '../components/Notification';
+import api from '../../api/api';
 
 /**
  * Componente de tabela para exibição de veículos
@@ -27,10 +30,48 @@ export function VehiclesTable({
   isLoading = false, 
   onSortChange = () => {},
   onEdit = (vehicle) => console.log('Edit vehicle:', vehicle),
-  onDelete = (vehicleId) => console.log('Delete vehicle:', vehicleId)
+  onDelete = async (vehicleId) => console.log('Delete vehicle:', vehicleId),
+  onDeleteClick = (vehicleId) => console.log('Delete click:', vehicleId)
 }) {
   const tableRef = useRef(null);
   const firstRender = useRef(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const [notification, setNotification] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
+  const handleConfirmDelete = async () => {
+    if (!vehicleToDelete) return;
+    
+    try {
+      await onDelete(vehicleToDelete.id);
+      showNotification('Veículo excluído com sucesso!', 'success');
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      showNotification('Erro ao excluir o veículo. Tente novamente.', 'error');
+    } finally {
+      setShowDeleteConfirm(false);
+      setVehicleToDelete(null);
+    }
+  };
+
+  const showNotification = useCallback((message, type = 'success') => {
+    setNotification({
+      show: true,
+      message,
+      type
+    });
+
+    const timer = setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const columns = useMemo(
     () => [
       {
@@ -59,10 +100,6 @@ export function VehiclesTable({
         cell: (info) => `${info.getValue().toLocaleString('pt-BR')} km`,
       },
       {
-        header: 'Descrição',
-        accessorKey: 'descricao',
-      },
-      {
         header: 'Ações',
         id: 'actions',
         cell: ({ row }) => (
@@ -78,19 +115,19 @@ export function VehiclesTable({
             >
               <FaEdit />
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm(`Tem certeza que deseja excluir o veículo ${row.original.modelo}?`)) {
-                  onDelete(row.original.id);
-                }
-              }}
-              className={`${styles.actionButton} ${styles.deleteButton}`}
-              aria-label={`Excluir veículo ${row.original.modelo}`}
-            >
-              <FaTrash />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteClick(row.original.id);
+                }}
+                className={`${styles.actionButton} ${styles.deleteButton}`}
+                aria-label={`Excluir veículo ${row.original.modelo}`}
+              >
+                <FaTrash />
+              </button>
+            </>
           </div>
         ),
         enableSorting: false,
@@ -250,7 +287,6 @@ export function VehiclesTable({
             ))}
           </tbody>
         </table>
-        
         {isLoading && (
           <div 
             className={styles.loadingOverlay}
@@ -263,6 +299,25 @@ export function VehiclesTable({
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setVehicleToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão"
+        message={`Tem certeza que deseja excluir o veículo ${vehicleToDelete?.name}?`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+      />
+      {notification.show && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(prev => ({ ...prev, show: false }))}
+        />
+      )}
     </div>
   );
 }
