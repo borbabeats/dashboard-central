@@ -19,6 +19,7 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Switch
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -57,11 +58,14 @@ export default function ConcessionariaCreate() {
     },
   });
 
+
+
   // Carregar opções da API
   useEffect(() => {
     const fetchOptions = async () => {
       try {
         setLoading(true);
+        
         const [
           combustiveis,
           transmissoes,
@@ -71,13 +75,13 @@ export default function ConcessionariaCreate() {
           categorias,
           opcionais,
         ] = await Promise.all([
-          api.get('/api/vehicle-fuel-types').then(res => res.data),
-          api.get('/api/vehicle-transmissions').then(res => res.data),
-          api.get('/api/vehicle-brands').then(res => res.data),
-          api.get('/api/vehicle-years').then(res => res.data),
-          api.get('/api/vehicle-colors').then(res => res.data),
-          api.get('/api/vehicle-categories').then(res => res.data),
-          api.get('/api/vehicle-optionals').then(res => res.data),
+          api.get('/vehicle-combustivel').then(res => res.data).catch(() => []),
+          api.get('/vehicle-transmissao').then(res => res.data).catch(() => []),
+          api.get('/vehicle-marca').then(res => res.data).catch(() => []),
+          api.get('/vehicle-ano').then(res => res.data).catch(() => []),
+          api.get('/vehicle-cor').then(res => res.data).catch(() => []),
+          api.get('/vehicle-categories').then(res => res.data).catch(() => []),
+          api.get('/vehicle-optionals').then(res => res.data).catch(() => []),
         ]);
 
         setOptions({
@@ -98,7 +102,7 @@ export default function ConcessionariaCreate() {
     };
 
     fetchOptions();
-  }, []);
+  }, []); 
 
   const onSubmit = async (data) => {
     try {
@@ -112,7 +116,8 @@ export default function ConcessionariaCreate() {
         quilometragem: Number(data.quilometragem),
       };
 
-      await api.post('/api/vehicles', vehicleData);
+      await api.post('/vehicles', vehicleData);
+
       setSuccess(true);
       
       // Redirecionar após 2 segundos
@@ -134,6 +139,7 @@ export default function ConcessionariaCreate() {
       </Box>
     );
   }
+
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
@@ -295,7 +301,7 @@ export default function ConcessionariaCreate() {
                       </MenuItem>
                       {options.anos.map((ano) => (
                         <MenuItem key={ano.id} value={ano.id}>
-                          {ano.nome}
+                          {ano.ano}
                         </MenuItem>
                       ))}
                     </Select>
@@ -394,7 +400,7 @@ export default function ConcessionariaCreate() {
                       </MenuItem>
                       {options.transmissoes.map((transmissao) => (
                         <MenuItem key={transmissao.id} value={transmissao.id}>
-                          {transmissao.nome}
+                          {transmissao.tipo}
                         </MenuItem>
                       ))}
                     </Select>
@@ -455,7 +461,7 @@ export default function ConcessionariaCreate() {
                       render={({ field }) => (
                         <FormControlLabel
                           control={
-                            <Checkbox
+                            <Switch
                               checked={field.value?.includes(opcional.id) || false}
                               onChange={(e) => {
                                 const value = Number(opcional.id);
@@ -466,7 +472,7 @@ export default function ConcessionariaCreate() {
                               }}
                             />
                           }
-                          label={opcional.nome}
+                          label={opcional.name}
                         />
                       )}
                     />
