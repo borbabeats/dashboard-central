@@ -5,7 +5,9 @@ import { useGetVehicles } from '../../store/useGetVehicles';
 import { VehiclesTable } from './VehiclesTable';
 import ConfirmModal from '../components/ConfirmModal';
 import api from '../../api/api';
-import styles from './page.module.scss';
+import { Button, Stack, Typography, Box } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import Link from 'next/link';
 
 export default function ConcessionariaPage() {
   const { vehicles, isLoading, error, getVehicles } = useGetVehicles();
@@ -64,25 +66,48 @@ export default function ConcessionariaPage() {
 
 
   return (
-    <main className={styles.concessionariaContainer}>
-      <div className={styles.header}>
-        <h1>Concessionária</h1>
-        <p className={styles.subtitle}>Lista de veículos disponíveis</p>
-      </div>
+    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={4} flexWrap="wrap" gap={2}>
+        <div>
+          <Typography variant="h4" component="h1" sx={{ mb: 1, color: 'text.primary' }}>
+            Concessionária
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Lista de veículos disponíveis
+          </Typography>
+        </div>
+        <Button
+          component={Link}
+          href="/concessionaria/create"
+          variant="contained"
+          startIcon={<AddIcon />}
+        >
+          Novo Veículo
+        </Button>
+      </Stack>
 
       {error ? (
-        <div className={styles.errorContainer}>
-          <p className={styles.errorText}>
+        <Box 
+          sx={{ 
+            p: 2, 
+            bgcolor: 'error.light', 
+            color: 'error.contrastText',
+            borderRadius: 1,
+            mb: 3
+          }}
+        >
+          <Typography variant="body1" sx={{ mb: 2 }}>
             Erro ao carregar veículos: {error.message}
-            <button 
-              className={styles.retryButton} 
-              onClick={getVehicles}
-              aria-label="Tentar novamente"
-            >
-              Tentar novamente
-            </button>
-          </p>
-        </div>
+          </Typography>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={getVehicles}
+            aria-label="Tentar novamente"
+          >
+            Tentar novamente
+          </Button>
+        </Box>
       ) : (
         <VehiclesTable 
           data={vehicles} 
@@ -106,11 +131,11 @@ export default function ConcessionariaPage() {
             }
           }}
           title="Confirmar Exclusão"
-          message={`Tem certeza que deseja excluir o veículo ${vehicleToDelete.current.name}?`}
+          message={`Tem certeza que deseja excluir o veículo ${vehicleToDelete.current?.name}?`}
           confirmText="Excluir"
           cancelText="Cancelar"
         />
       )}
-    </main>
+    </Box>
   );
 }

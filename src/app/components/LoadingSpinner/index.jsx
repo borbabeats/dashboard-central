@@ -1,17 +1,22 @@
 "use client";
 
+import { CircularProgress } from '@mui/material';
 import styles from './LoadingSpinner.module.scss';
 
 export function LoadingSpinner({ size = 'medium', className = '' }) {
-    const sizeClass = {
-        small: styles.small,
-        medium: styles.medium,
-        large: styles.large,
-    }[size] || styles.medium;
+    const sizeMap = {
+        small: 20,
+        medium: 40,
+        large: 60,
+    };
 
     return (
-        <div className={`${styles.spinnerContainer} ${sizeClass} ${className}`}>
-            <div className={styles.spinner}></div>
+        <div className={`${styles.spinnerContainer} ${className}`}>
+            <CircularProgress 
+                size={sizeMap[size] || sizeMap.medium}
+                thickness={4}
+                className={styles.spinner}
+            />
         </div>
     );
 }
