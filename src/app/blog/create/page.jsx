@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { Button, Stack, FormControlLabel, Checkbox, FormGroup, TextField, InputLabel, Select, MenuItem, FormControl } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../../../api/api';
 import Notification from '../../components/Notification';
 import styles from '../page.module.scss';
@@ -107,46 +109,49 @@ export default function BlogCreate() {
 
     return (
         <div className={styles.blogContainer}>
-            <header className={styles.header}>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={4} flexWrap="wrap" gap={2}>
                 <div>
-                    <h1>Nova Postagem</h1>
-                    <p className={styles.subtitle}>Preencha os campos abaixo para criar uma nova postagem</p>
+                    <h1 style={{ margin: '0 0 8px 0', color: '#1a1a1a' }}>Nova Postagem</h1>
+                    <p style={{ margin: 0, color: '#666' }}>Preencha os campos abaixo para criar uma nova postagem</p>
                 </div>
-                <Link href="/blog" className={styles.createButton}>
+                <Button 
+                    component={Link} 
+                    href="/blog" 
+                    variant="outlined"
+                    startIcon={<ArrowBackIcon />}
+                >
                     Voltar para a lista
-                </Link>
-            </header>
+                </Button>
+            </Stack>
 
             <form onSubmit={handleSubmit} className={styles.form}>
-                <div className={styles.formGroup}>
-                    <label htmlFor="title" className={styles.formLabel}>Título *</label>
-                    <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        className={styles.input}
-                        placeholder="Digite o título da postagem"
-                        required
-                    />
-                </div>
+                <TextField
+                    fullWidth
+                    label="Título"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="Digite o título da postagem"
+                    required
+                    margin="normal"
+                    variant="outlined"
+                />
+
+                <TextField
+                    fullWidth
+                    label="Resumo"
+                    id="excerpt"
+                    name="excerpt"
+                    value={formData.excerpt}
+                    onChange={handleChange}
+                    placeholder="Um breve resumo da postagem (opcional)"
+                    margin="normal"
+                    variant="outlined"
+                />
 
                 <div className={styles.formGroup}>
-                    <label htmlFor="excerpt" className={styles.formLabel}>Resumo</label>
-                    <input
-                        type="text"
-                        id="excerpt"
-                        name="excerpt"
-                        value={formData.excerpt}
-                        onChange={handleChange}
-                        className={styles.input}
-                        placeholder="Um breve resumo da postagem (opcional)"
-                    />
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label htmlFor="content" className={styles.formLabel} style={{ display: 'block', marginBottom: '0.5rem' }}>Conteúdo *</label>
+                    <label htmlFor="content" className={styles.formLabel} style={{ display: 'block', marginBottom: '0.5rem' }}>Conteúdo</label>
                     <RichTextEditor
                         value={formData.content}
                         onChange={(value) => {
@@ -159,76 +164,92 @@ export default function BlogCreate() {
                     />
                 </div>
 
-                <div className={styles.formGroup}>
-                    <label htmlFor="author" className={styles.formLabel}>Autor *</label>
+                <FormControl fullWidth margin="normal" required>
+                    <InputLabel id="author-label">Autor</InputLabel>
                     {isLoadingAuthors ? (
                         <div className={styles.loading}>Carregando autores...</div>
                     ) : (
-                        <select
+                        <Select
+                            labelId="author-label"
                             id="author"
                             name="author"
                             value={formData.author}
+                            label="Autor"
                             onChange={handleChange}
-                            className={styles.input}
-                            required
                             disabled={isLoadingAuthors}
+                            variant="outlined"
                         >
-                            <option value="">Selecione o autor</option>
+                            <MenuItem value="">
+                                <em>Selecione o autor</em>
+                            </MenuItem>
                             {authors.map((author) => (
-                                <option key={author.id} value={author.id}>
+                                <MenuItem key={author.id} value={author.id}>
                                     {author.name}
-                                </option>
+                                </MenuItem>
                             ))}
-                        </select>
+                        </Select>
                     )}
-                </div>
+                </FormControl>
 
                 <div className={styles.formRow}>
-                    <div className={styles.formGroup}>
-                        <label className={styles.checkboxLabel}>
-                            <input
-                                type="checkbox"
-                                name="published"
-                                checked={formData.published}
-                                onChange={handleChange}
-                                className={styles.checkbox}
-                            />
-                            <span>Publicar agora</span>
-                        </label>
-                    </div>
+                    <FormGroup>
+                        <FormControlLabel 
+                            control={
+                                <Checkbox 
+                                    name="published"
+                                    checked={formData.published}
+                                    onChange={handleChange}
+                                    color="primary"
+                                />
+                            } 
+                            label="Publicar agora"
+                        />
+                    </FormGroup>
 
                     {formData.published && (
-                        <div className={styles.formGroup}>
-                            <label htmlFor="published_at" className={styles.formLabel}>Data de publicação</label>
-                            <input
-                                type="date"
-                                id="published_at"
-                                name="published_at"
-                                value={formData.published_at}
-                                onChange={handleChange}
-                                className={styles.input}
-                            />
-                        </div>
+                        <TextField
+                            fullWidth
+                            type="date"
+                            id="published_at"
+                            name="published_at"
+                            label="Data de publicação"
+                            value={formData.published_at}
+                            onChange={handleChange}
+                            margin="normal"
+                            variant="outlined"
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                        />
                     )}
                 </div>
 
-                <div className={styles.formActions}>
-                    <button
-                        type="button"
+                <Stack 
+                    direction="row" 
+                    spacing={2} 
+                    justifyContent="flex-end"
+                    sx={{ 
+                        mt: 3, 
+                        pt: 2, 
+                        borderTop: '1px solid',
+                        borderColor: 'divider'
+                    }}
+                >
+                    <Button
+                        variant="outlined"
                         onClick={() => router.push('/blog')}
-                        className={`${styles.button} ${styles.secondaryButton}`}
                         disabled={isSubmitting}
                     >
                         Cancelar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="submit"
-                        className={`${styles.button} ${styles.primaryButton}`}
+                        variant="contained"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? 'Salvando...' : 'Salvar Postagem'}
-                    </button>
-                </div>
+                    </Button>
+                </Stack>
             </form>
 
             {notification.show && (

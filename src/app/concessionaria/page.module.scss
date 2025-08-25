@@ -13,6 +13,11 @@
 
 .header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
   
   h1 {
     font-size: 2rem;
@@ -24,6 +29,32 @@
     color: #666;
     margin: 0;
     font-size: 1rem;
+  }
+
+  .createButton {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    height: fit-content;
+    
+    &:hover {
+      background-color: #1d4ed8;
+    }
+    
+    &:active {
+      background-color: #1e40af;
+    }
   }
 }
 

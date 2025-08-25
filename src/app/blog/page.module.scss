@@ -1,5 +1,112 @@
 @use '../styles/color.scss' as color;
 
+/* Form Actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  
+  .button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+  
+  .primaryButton {
+    background-color: #2563eb;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background-color: #1d4ed8;
+    }
+    
+    &:active:not(:disabled) {
+      background-color: #1e40af;
+      transform: translateY(1px);
+    }
+  }
+  
+  .secondaryButton {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    
+    &:hover:not(:disabled) {
+      background-color: #e5e7eb;
+      border-color: #9ca3af;
+    }
+    
+    &:active:not(:disabled) {
+      background-color: #d1d5db;
+      transform: translateY(1px);
+    }
+  }
+}
+
+/* Form Styles */
+.formGroup {
+  margin-bottom: 1.5rem;
+  width: 100%;
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+  
+  .checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    margin: 0;
+    
+    .checkbox {
+      margin: 0;
+      width: auto;
+    }
+  }
+  
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    
+    &:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+  }
+  
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+}
+
 /* Layout principal */
 .blogContainer {
   padding: 2rem;
