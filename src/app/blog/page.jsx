@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import Link from 'next/link';
 import Notification from '../components/Notification';
 import api from "../../api/api";
 import { useGetPosts } from "../../store/useGetPosts";
@@ -163,8 +164,13 @@ export default function BlogPage() {
     return (
         <div className={styles.blogContainer}>
             <header className={styles.header}>
-                <h1>Blog</h1>
-                <p className={styles.subtitle}>Total de postagens: {meta?.total || 0}</p>
+                <div>
+                    <h1>Blog</h1>
+                    <p className={styles.subtitle}>Total de postagens: {meta?.total || 0}</p>
+                </div>
+                <Link href="/blog/create" className={styles.createButton}>
+                    Nova Postagem
+                </Link>
             </header>
             
             <div className={styles.tableWrapper}>
