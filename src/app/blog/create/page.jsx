@@ -19,6 +19,8 @@ const RichTextEditor = dynamic(
 export default function BlogCreate() {
     const router = useRouter();
     const [formData, setFormData] = useState({
+        image: null,
+        image_url: '',
         title: '',
         excerpt: '',
         content: '',
@@ -27,7 +29,9 @@ export default function BlogCreate() {
         published_at: new Date().toISOString().split('T')[0]
     });
     const [authors, setAuthors] = useState([]);
+    const [categories, setCategories] = useState([])
     const [isLoadingAuthors, setIsLoadingAuthors] = useState(true);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({
         show: false,
@@ -52,12 +56,51 @@ export default function BlogCreate() {
         fetchAuthors();
     }, []);
 
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await api.get('/categories');
+                setCategories(response.data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                showNotification('Erro ao carregar categorias', 'error');
+            } finally {
+                setIsLoadingCategories(false);
+            }
+        }
+        fetchCategories();
+    }, [])
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        setFormData(prev => ({
+            ...prev,
+            image: file
+        }));
+    };
+
+    const uploadImageToImgBB = async (imageFile) => {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            return data.data.url;
+        }
+        throw new Error('Erro ao fazer upload da imagem');
     };
 
     const handleSubmit = async (e) => {
@@ -72,12 +115,23 @@ export default function BlogCreate() {
         setIsSubmitting(true);
 
         try {
+            let imageUrl = '';
+            
+            // Upload image to ImgBB if selected
+            if (formData.image) {
+                imageUrl = await uploadImageToImgBB(formData.image);
+            }
+
             const response = await api.post('/posts', {
                 ...formData,
+                image_url: imageUrl,
                 // Convert author ID to integer
                 author_id: parseInt(formData.author, 10),
-                // Remove the author field as we're using author_id
+                category_id: parseInt(formData.category, 10),
+                // Remove fields not needed in API
+                image: undefined,
                 author: undefined,
+                category: undefined,
                 // Ensure we only send the date part for published_at
                 published_at: formData.published ? formData.published_at : null
             });
@@ -107,6 +161,8 @@ export default function BlogCreate() {
         }, 5000);
     };
 
+    
+
     return (
         <div className={styles.blogContainer}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={4} flexWrap="wrap" gap={2}>
@@ -125,6 +181,29 @@ export default function BlogCreate() {
             </Stack>
 
             <form onSubmit={handleSubmit} className={styles.form}>
+                <div className={styles.formGroup}>
+                    <label htmlFor="image" className={styles.formLabel} style={{ display: 'block', marginBottom: '0.5rem' }}>Imagem da Postagem</label>
+                    <input
+                        type="file"
+                        id="image"
+                        name="image"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        style={{
+                            width: '100%',
+                            padding: '12px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            marginBottom: '16px'
+                        }}
+                    />
+                    {formData.image && (
+                        <p style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>
+                            Arquivo selecionado: {formData.image.name}
+                        </p>
+                    )}
+                </div>
+
                 <TextField
                     fullWidth
                     label="Título"
@@ -185,6 +264,33 @@ export default function BlogCreate() {
                             {authors.map((author) => (
                                 <MenuItem key={author.id} value={author.id}>
                                     {author.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    )}
+                </FormControl>
+
+                <FormControl fullWidth margin="normal" required>
+                    <InputLabel id="author-label">Categoria</InputLabel>
+                    {isLoadingCategories ? (
+                        <div className={styles.loading}>Carregando categorias...</div>
+                    ) : (
+                        <Select
+                            labelId="category-label"
+                            id="category"
+                            name="category"
+                            value={formData.category}
+                            label="Categoria"
+                            onChange={handleChange}
+                            disabled={isLoadingCategories}
+                            variant="outlined"
+                        >
+                            <MenuItem value="">
+                                <em>Selecione a Categoria</em>
+                            </MenuItem>
+                            {categories.map((cat) => (
+                                <MenuItem key={cat.id} value={cat.id}>
+                                    {cat.name}
                                 </MenuItem>
                             ))}
                         </Select>
