@@ -80,6 +80,47 @@ export function VehiclesTable({
         size: 80,
       },
       {
+        header: 'Preview',
+        accessorKey: 'imagem_url',
+        cell: ({ row }) => {
+          const imageUrl = row.original?.imagem_url;
+          const altText = `Imagem de ${row.original?.modelo || 'veículo'}`;
+          if (!imageUrl) {
+            return (
+              <div
+                style={{
+                  width: 72,
+                  height: 48,
+                  backgroundColor: '#f0f0f0',
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#999',
+                  fontSize: 12,
+                }}
+                aria-label={`Sem imagem para ${row.original?.modelo || 'veículo'}`}
+              >
+                N/A
+              </div>
+            );
+          }
+          return (
+            <img
+              src={imageUrl}
+              alt={altText}
+              width={72}
+              height={48}
+              style={{
+                objectFit: 'cover',
+                borderRadius: 6,
+                display: 'block',
+              }}
+            />
+          );
+        },
+      },
+      {
         header: 'Modelo',
         accessorKey: 'modelo',
       },

@@ -30,6 +30,8 @@ export default function ConcessionariaCreate() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [options, setOptions] = useState({
     combustiveis: [],
     transmissoes: [],
@@ -57,6 +59,25 @@ export default function ConcessionariaCreate() {
       opcionais: [],
     },
   });
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setSelectedImages((prev) => [...prev, ...files]);
+    setCurrentPreviewIndex(0);
+  };
+
+  const handleRemoveSelectedImage = (indexToRemove) => {
+    setSelectedImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    setCurrentPreviewIndex((prevIndex) => {
+      if (indexToRemove < prevIndex) return prevIndex - 1;
+      if (prevIndex >= Math.max(0, selectedImages.length - 2)) return Math.max(0, prevIndex - 1);
+      return prevIndex;
+    });
+  };
+
+  const goPrev = () => setCurrentPreviewIndex((prev) => (prev - 1 + selectedImages.length) % selectedImages.length);
+  const goNext = () => setCurrentPreviewIndex((prev) => (prev + 1) % selectedImages.length);
 
 
 
@@ -104,16 +125,43 @@ export default function ConcessionariaCreate() {
     fetchOptions();
   }, []); 
 
+  const uploadImageToImgBB = async (imageFile) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.NEXT_APP_IMGBB_API_KEY}`, {
+        method: 'POST',
+        body: formData
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+        return data.data.url;
+    }
+    throw new Error('Erro ao fazer upload da imagem');
+};
+
   const onSubmit = async (data) => {
     try {
       setLoading(true);
       setError(null);
+      
+      let imageUrl = '';
+      let imageUrls = [];
+      
+      // Upload images to ImgBB if selected
+      if (selectedImages && selectedImages.length > 0) {
+        imageUrls = await Promise.all(selectedImages.map((file) => uploadImageToImgBB(file)));
+        imageUrl = imageUrls[0] || '';
+      }
       
       // Formatar dados para a API
       const vehicleData = {
         ...data,
         preco: Number(data.preco),
         quilometragem: Number(data.quilometragem),
+        imagem_url: imageUrl,
+        images: imageUrls,
       };
 
       await api.post('/vehicles', vehicleData);
@@ -159,7 +207,7 @@ export default function ConcessionariaCreate() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Modelo */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <Controller
                 name="modelo"
                 control={control}
@@ -177,7 +225,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Preço */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <Controller
                 name="preco"
                 control={control}
@@ -197,7 +245,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Quilometragem */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <Controller
                 name="quilometragem"
                 control={control}
@@ -217,7 +265,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Marca */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <FormControl fullWidth error={!!errors.marca_id}>
                 <InputLabel>Marca</InputLabel>
                 <Controller
@@ -250,7 +298,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Categoria */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <FormControl fullWidth error={!!errors.categoria_id}>
                 <InputLabel>Categoria</InputLabel>
                 <Controller
@@ -283,7 +331,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Ano */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <FormControl fullWidth error={!!errors.ano_id}>
                 <InputLabel>Ano</InputLabel>
                 <Controller
@@ -316,7 +364,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Cor */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <FormControl fullWidth error={!!errors.cor_id}>
                 <InputLabel>Cor</InputLabel>
                 <Controller
@@ -349,7 +397,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Tipo de Combustível */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <FormControl fullWidth error={!!errors.tipo_combustivel_id}>
                 <InputLabel>Combustível</InputLabel>
                 <Controller
@@ -382,7 +430,7 @@ export default function ConcessionariaCreate() {
             </Grid>
 
             {/* Transmissão */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={4}>
               <FormControl fullWidth error={!!errors.transmissao_id}>
                 <InputLabel>Transmissão</InputLabel>
                 <Controller
@@ -414,20 +462,93 @@ export default function ConcessionariaCreate() {
               </FormControl>
             </Grid>
 
-            {/* Imagem URL */}
+            {/* Upload de Imagens */}
             <Grid item xs={12}>
-              <Controller
-                name="imagem_url"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="URL da Imagem"
-                    fullWidth
-                    placeholder="https://exemplo.com/imagem.jpg"
-                  />
-                )}
+              <Typography variant="subtitle1" gutterBottom>
+                Imagens do Veículo
+              </Typography>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  marginBottom: '8px'
+                }}
               />
+              {selectedImages.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <Typography variant="body2" color="text.secondary" style={{ marginBottom: 8 }}>
+                    {selectedImages.length} arquivo(s) selecionado(s)
+                  </Typography>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Button variant="outlined" size="small" onClick={goPrev} disabled={selectedImages.length <= 1}>
+                      Anterior
+                    </Button>
+                    <div style={{
+                      width: 280,
+                      height: 180,
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      border: '1px solid #e0e0e0',
+                      position: 'relative',
+                      background: '#fafafa'
+                    }}>
+                      <img
+                        src={URL.createObjectURL(selectedImages[currentPreviewIndex])}
+                        alt={`Pré-visualização ${currentPreviewIndex + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        onClick={() => handleRemoveSelectedImage(currentPreviewIndex)}
+                        style={{ position: 'absolute', top: 8, right: 8 }}
+                      >
+                        Remover
+                      </Button>
+                      <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 12 }}>
+                        {currentPreviewIndex + 1} / {selectedImages.length}
+                      </div>
+                    </div>
+                    <Button variant="outlined" size="small" onClick={goNext} disabled={selectedImages.length <= 1}>
+                      Próximo
+                    </Button>
+                  </div>
+                  {/* Thumbnails */}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                    {selectedImages.map((file, idx) => (
+                      <button
+                        key={`${file.name}-${idx}`}
+                        type="button"
+                        onClick={() => setCurrentPreviewIndex(idx)}
+                        style={{
+                          width: 72,
+                          height: 48,
+                          borderRadius: 6,
+                          overflow: 'hidden',
+                          border: idx === currentPreviewIndex ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                          padding: 0,
+                          cursor: 'pointer',
+                          background: '#fff'
+                        }}
+                        aria-label={`Selecionar imagem ${idx + 1}`}
+                      >
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`Miniatura ${idx + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Grid>
 
             {/* Descrição */}
