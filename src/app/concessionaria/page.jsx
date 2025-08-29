@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useGetVehicles } from '../../store/useGetVehicles';
 import { VehiclesTable } from './VehiclesTable';
 import ConfirmModal from '../components/ConfirmModal';
@@ -10,6 +11,7 @@ import AddIcon from '@mui/icons-material/Add';
 import Link from 'next/link';
 
 export default function ConcessionariaPage() {
+  const router = useRouter();
   const { vehicles, isLoading, error, getVehicles } = useGetVehicles();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const vehicleToDelete = useRef(null);
@@ -23,16 +25,14 @@ export default function ConcessionariaPage() {
   };
 
   const handleEdit = (vehicle) => {
-    console.log('Edit vehicle:', vehicle);
-    // TODO: Implement edit functionality
-    // Example: router.push(`/concessionaria/editar/${vehicle.id}`);
+    router.push(`/concessionaria/edit/${vehicle.id}`);
   };
 
   const handleDelete = async (vehicleId) => {
     try {
       const response = await api.delete(`/vehicles/${vehicleId}`);
       
-      if (response.status === 204) {
+      if (response.status === 204 || response.status === 200) {
         // Recarrega a lista de veículos após a exclusão
         await getVehicles();
         return true;
@@ -41,7 +41,18 @@ export default function ConcessionariaPage() {
       }
     } catch (error) {
       console.error('Erro ao excluir veículo:', error);
-      // A notificação de erro será tratada pelo componente VehiclesTable
+      
+      // Mostrar erro mais detalhado
+      let errorMessage = 'Erro ao excluir veículo';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
       throw error;
     } finally {
       setShowDeleteConfirm(false);

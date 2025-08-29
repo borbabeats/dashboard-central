@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import {
   Box,
@@ -23,16 +23,21 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
-import api from '../../../api/api';
+import api from '../../../../api/api';
 
-export default function ConcessionariaCreate() {
+export default function ConcessionariaEdit() {
   const router = useRouter();
+  const params = useParams();
+  const vehicleId = params.id;
+  
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const [existingImages, setExistingImages] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [options, setOptions] = useState({
     combustiveis: [],
     transmissoes: [],
@@ -43,7 +48,7 @@ export default function ConcessionariaCreate() {
     opcionais: [],
   });
 
-  const { control, handleSubmit, formState: { errors } } = useForm({
+  const { control, handleSubmit, formState: { errors }, reset } = useForm({
     defaultValues: {
       modelo: '',
       preco: 0,
@@ -60,6 +65,68 @@ export default function ConcessionariaCreate() {
       opcionais: [],
     },
   });
+
+  // Carregar dados do veículo e opções
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingData(true);
+        
+        const [vehicleResponse, ...optionsResponses] = await Promise.all([
+          api.get(`/vehicles/${vehicleId}`),
+          api.get('/vehicle-combustivel').catch(() => ({ data: [] })),
+          api.get('/vehicle-transmissao').catch(() => ({ data: [] })),
+          api.get('/vehicle-marca').catch(() => ({ data: [] })),
+          api.get('/vehicle-ano').catch(() => ({ data: [] })),
+          api.get('/vehicle-cor').catch(() => ({ data: [] })),
+          api.get('/vehicle-categories').catch(() => ({ data: [] })),
+          api.get('/vehicle-optionals').catch(() => ({ data: [] })),
+        ]);
+
+        const vehicleData = vehicleResponse.data;
+        
+        setOptions({
+          combustiveis: optionsResponses[0].data,
+          transmissoes: optionsResponses[1].data,
+          marcas: optionsResponses[2].data,
+          anos: optionsResponses[3].data,
+          cores: optionsResponses[4].data,
+          categorias: optionsResponses[5].data,
+          opcionais: optionsResponses[6].data,
+        });
+
+        // Preencher formulário com dados existentes
+        reset({
+          modelo: vehicleData.modelo || '',
+          preco: Number(vehicleData.preco) || 0,
+          descricao: vehicleData.descricao || '',
+          quilometragem: Number(vehicleData.quilometragem) || 0,
+          tipo_combustivel_id: vehicleData.tipo_combustivel_id || 0,
+          transmissao_id: vehicleData.transmissao_id || 0,
+          imagem_url: vehicleData.imagem_url || '',
+          disponivel: vehicleData.disponivel !== false,
+          marca_id: vehicleData.marca_id || 0,
+          ano_id: vehicleData.ano_id || 0,
+          cor_id: vehicleData.cor_id || 0,
+          categoria_id: vehicleData.categoria_id || 0,
+          opcionais: vehicleData.optionals?.map(opt => opt.id) || [],
+        });
+
+        // Definir imagens existentes
+        setExistingImages(vehicleData.images || []);
+        
+      } catch (err) {
+        setError('Erro ao carregar dados do veículo.');
+        console.error('Erro ao carregar dados:', err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (vehicleId) {
+      fetchData();
+    }
+  }, [vehicleId, reset]);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files || []);
@@ -94,67 +161,20 @@ export default function ConcessionariaCreate() {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === dropIndex) return;
 
-    const newImages = [...selectedImages];
+    const newImages = [...existingImages];
     const draggedImage = newImages[draggedIndex];
     newImages.splice(draggedIndex, 1);
     newImages.splice(dropIndex, 0, draggedImage);
     
-    setSelectedImages(newImages);
-    setDraggedIndex(null);
+    // Atualizar ordem
+    const updatedImages = newImages.map((img, idx) => ({
+      ...img,
+      ordem: idx + 1
+    }));
     
-    // Ajustar preview se necessário
-    if (currentPreviewIndex === draggedIndex) {
-      setCurrentPreviewIndex(dropIndex);
-    } else if (currentPreviewIndex === dropIndex) {
-      setCurrentPreviewIndex(draggedIndex);
-    }
+    setExistingImages(updatedImages);
+    setDraggedIndex(null);
   };
-
-
-
-  // Carregar opções da API
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        setLoading(true);
-        
-        const [
-          combustiveis,
-          transmissoes,
-          marcas,
-          anos,
-          cores,
-          categorias,
-          opcionais,
-        ] = await Promise.all([
-          api.get('/vehicle-combustivel').then(res => res.data).catch(() => []),
-          api.get('/vehicle-transmissao').then(res => res.data).catch(() => []),
-          api.get('/vehicle-marca').then(res => res.data).catch(() => []),
-          api.get('/vehicle-ano').then(res => res.data).catch(() => []),
-          api.get('/vehicle-cor').then(res => res.data).catch(() => []),
-          api.get('/vehicle-categories').then(res => res.data).catch(() => []),
-          api.get('/vehicle-optionals').then(res => res.data).catch(() => []),
-        ]);
-
-        setOptions({
-          combustiveis,
-          transmissoes,
-          marcas,
-          anos,
-          cores,
-          categorias,
-          opcionais,
-        });
-      } catch (err) {
-        setError('Erro ao carregar as opções. Tente novamente.');
-        console.error('Erro ao carregar opções:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOptions();
-  }, []); 
 
   const uploadImageToImgBB = async (imageFile) => {
     const formData = new FormData();
@@ -170,24 +190,30 @@ export default function ConcessionariaCreate() {
         return data.data.url;
     }
     throw new Error('Erro ao fazer upload da imagem');
-};
+  };
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
       setError(null);
       
-      let imageUrl = '';
-      let imageUrls = [];
+      let imageUrl = data.imagem_url;
+      let imageUrls = [...existingImages.map(img => img.url)];
       
-      // Upload images to ImgBB if selected
+      // Upload novas imagens se selecionadas
       if (selectedImages && selectedImages.length > 0) {
-        imageUrls = await Promise.all(selectedImages.map((file) => uploadImageToImgBB(file)));
-        imageUrl = imageUrls[0] || '';
+        const newImageUrls = await Promise.all(selectedImages.map((file) => uploadImageToImgBB(file)));
+        imageUrls = [...imageUrls, ...newImageUrls];
+        if (!imageUrl && newImageUrls.length > 0) {
+          imageUrl = newImageUrls[0];
+        }
       }
       
       // Preparar dados das imagens com ordem
-      const imagesWithOrder = imageUrls.map((url, idx) => ({ url, ordem: idx + 1 }));
+      const imagesWithOrder = [
+        ...existingImages.map((img, idx) => ({ url: img.url, ordem: idx + 1 })),
+        ...selectedImages.map((_, idx) => ({ url: imageUrls[existingImages.length + idx], ordem: existingImages.length + idx + 1 }))
+      ];
       
       // Formatar dados para a API
       const vehicleData = {
@@ -201,8 +227,7 @@ export default function ConcessionariaCreate() {
       delete vehicleData.opcionais;
 
       console.log('Dados sendo enviados:', vehicleData);
-      console.log('Optionals:', vehicleData.optionals);
-      await api.post('/vehicles', vehicleData);
+      await api.put(`/vehicles/${vehicleId}`, vehicleData);
 
       setSuccess(true);
       
@@ -211,21 +236,20 @@ export default function ConcessionariaCreate() {
         router.push('/concessionaria');
       }, 2000);
     } catch (err) {
-      setError('Erro ao cadastrar veículo. Verifique os dados e tente novamente.');
-      console.error('Erro ao cadastrar veículo:', err);
+      setError('Erro ao atualizar veículo. Verifique os dados e tente novamente.');
+      console.error('Erro ao atualizar veículo:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && Object.values(options).every(opt => opt.length === 0)) {
+  if (loadingData) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
       </Box>
     );
   }
-
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
@@ -238,7 +262,7 @@ export default function ConcessionariaCreate() {
       </Button>
 
       <Typography variant="h4" component="h1" gutterBottom>
-        Cadastrar Novo Veículo
+        Editar Veículo
       </Typography>
 
       <Paper sx={{ p: 3, mt: 2 }}>
@@ -505,6 +529,59 @@ export default function ConcessionariaCreate() {
               <Typography variant="subtitle1" gutterBottom>
                 Imagens do Veículo
               </Typography>
+              
+              {/* Imagens existentes */}
+              {existingImages.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Imagens atuais (arraste para reordenar):
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {existingImages.map((img, idx) => (
+                      <Box 
+                        key={img.id} 
+                        sx={{ 
+                          width: 80, 
+                          height: 60, 
+                          borderRadius: 1, 
+                          overflow: 'hidden', 
+                          border: draggedIndex === idx ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                          cursor: 'move',
+                          position: 'relative',
+                          opacity: draggedIndex === idx ? 0.5 : 1
+                        }}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, idx)}
+                      >
+                        <img
+                          src={img.url}
+                          alt={`Imagem ${idx + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          bottom: 2, 
+                          right: 2, 
+                          background: 'rgba(0,0,0,0.7)', 
+                          color: 'white', 
+                          borderRadius: '50%', 
+                          width: 16, 
+                          height: 16, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          fontSize: 10 
+                        }}>
+                          {idx + 1}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+              
               <input
                 type="file"
                 accept="image/*"
@@ -521,7 +598,7 @@ export default function ConcessionariaCreate() {
               {selectedImages.length > 0 && (
                 <div style={{ marginTop: 8 }}>
                   <Typography variant="body2" color="text.secondary" style={{ marginBottom: 8 }}>
-                    {selectedImages.length} arquivo(s) selecionado(s)
+                    {selectedImages.length} nova(s) imagem(ns) selecionada(s)
                   </Typography>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Button variant="outlined" size="small" onClick={goPrev} disabled={selectedImages.length <= 1}>
@@ -557,58 +634,6 @@ export default function ConcessionariaCreate() {
                     <Button variant="outlined" size="small" onClick={goNext} disabled={selectedImages.length <= 1}>
                       Próximo
                     </Button>
-                  </div>
-                  {/* Thumbnails */}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                    <Typography variant="body2" color="text.secondary" style={{ width: '100%', marginBottom: 8 }}>
-                      Arraste as miniaturas para reordenar:
-                    </Typography>
-                    {selectedImages.map((file, idx) => (
-                      <button
-                        key={`${file.name}-${idx}`}
-                        type="button"
-                        onClick={() => setCurrentPreviewIndex(idx)}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, idx)}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, idx)}
-                        style={{
-                          width: 72,
-                          height: 48,
-                          borderRadius: 6,
-                          overflow: 'hidden',
-                          border: idx === currentPreviewIndex ? '2px solid #1976d2' : draggedIndex === idx ? '2px solid #ff9800' : '1px solid #e0e0e0',
-                          padding: 0,
-                          cursor: 'move',
-                          background: '#fff',
-                          opacity: draggedIndex === idx ? 0.5 : 1,
-                          position: 'relative'
-                        }}
-                        aria-label={`Selecionar imagem ${idx + 1}`}
-                      >
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Miniatura ${idx + 1}`}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        />
-                        <div style={{ 
-                          position: 'absolute', 
-                          bottom: 2, 
-                          right: 2, 
-                          background: 'rgba(0,0,0,0.7)', 
-                          color: 'white', 
-                          borderRadius: '50%', 
-                          width: 16, 
-                          height: 16, 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          fontSize: 10 
-                        }}>
-                          {idx + 1}
-                        </div>
-                      </button>
-                    ))}
                   </div>
                 </div>
               )}
@@ -700,7 +725,7 @@ export default function ConcessionariaCreate() {
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
               disabled={loading}
             >
-              {loading ? 'Salvando...' : 'Salvar Veículo'}
+              {loading ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </Box>
         </form>
@@ -723,7 +748,7 @@ export default function ConcessionariaCreate() {
         onClose={() => setSuccess(false)}
       >
         <Alert severity="success" onClose={() => setSuccess(false)}>
-          Veículo cadastrado com sucesso!
+          Veículo atualizado com sucesso!
         </Alert>
       </Snackbar>
     </Box>
